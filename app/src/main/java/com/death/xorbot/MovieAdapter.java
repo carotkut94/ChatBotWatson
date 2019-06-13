@@ -18,7 +18,7 @@ import com.bumptech.glide.Glide;
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MyViewHolder> {
 
     private Movies movies;
-    private String imageURL = "https://image.tmdb.org/t/p/w320";
+    private String imageURL = "https://image.tmdb.org/t/p/w300";
     private Context context;
 
     public class MyViewHolder extends RecyclerView.ViewHolder {

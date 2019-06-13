@@ -87,27 +87,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void addToAdapter(String data) {
-        ResponseModel responseModel = new ResponseModel();
+        final ResponseModel responseModel = new ResponseModel();
         responseModel.setMine(false);
         responseModel.setResponse(data);
-        responseModelList.add(responseModel);
-        botAdapter.notifyDataSetChanged();
-        if (!isLastVisible())
-            conversation.smoothScrollToPosition(botAdapter.getItemCount() - 1);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                responseModelList.add(responseModel);
+                botAdapter.notifyDataSetChanged();
+                if (!isLastVisible())
+                    conversation.smoothScrollToPosition(botAdapter.getItemCount() - 1);
+
+            }
+        });
     }
 
     public void addToAdapter(String data, Movies movies, String category) {
-        ResponseModel responseModel = new ResponseModel();
+        final ResponseModel responseModel = new ResponseModel();
         responseModel.setMine(false);
         responseModel.setResponse(data);
         responseModel.setCollection(true);
         responseModel.setMovie(true);
         responseModel.setMovies(movies);
         responseModel.setMovieQueryType(category);
-        responseModelList.add(responseModel);
-        botAdapter.notifyDataSetChanged();
-        if (!isLastVisible())
-            conversation.smoothScrollToPosition(botAdapter.getItemCount() - 1);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                responseModelList.add(responseModel);
+                botAdapter.notifyDataSetChanged();
+                if (!isLastVisible())
+                    conversation.smoothScrollToPosition(botAdapter.getItemCount() - 1);
+
+            }
+        });
 
     }
 
@@ -130,8 +143,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void removeLoading() {
-        botAdapter.removeLastElement();
-        userInput.setEnabled(true);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                botAdapter.removeLastElement();
+                userInput.setEnabled(true);
+            }
+        });
     }
 
     private void promptSpeechInput() {
@@ -195,73 +213,66 @@ public class MainActivity extends AppCompatActivity {
                             String quotesURL =
                                     "https://api.forismatic.com/api/1.0/" +
                                             "?method=getQuote&format=text&lang=en";
-                            Fuel.get(quotesURL)
-                                    .responseString(new Handler<String>() {
-                                        @Override
-                                        public void success(Request request,
-                                                            Response response, String quote) {
-                                            removeLoading();
-                                            addToAdapter(quote);
-                                        }
+                            Fuel.INSTANCE.get(quotesURL,null).responseString(new Handler<String>() {
+                                @Override
+                                public void success(String s) {
+                                    removeLoading();
+                                    addToAdapter(s);
+                                }
 
-                                        @Override
-                                        public void failure(Request request,
-                                                            Response response,
-                                                            FuelError fuelError) {
-                                        }
-                                    });
+                                @Override
+                                public void failure(FuelError fuelError) {
+
+                                }
+                            });
                         } else if (response.getIntents().get(0).getIntent()
                                 .endsWith("Joke")) {
                             HashMap<String, String> headerValue = new HashMap<>();
                             headerValue.put("Accept", "text/plain");
-                            Fuel.get("https://icanhazdadjoke.com/").header(headerValue)
+                            Fuel.INSTANCE.get("https://icanhazdadjoke.com/",null).header(headerValue)
                                     .responseString(new Handler<String>() {
                                         @Override
-                                        public void success(Request request,
-                                                            Response response, String joke) {
+                                        public void success(String s) {
                                             removeLoading();
-                                            addToAdapter(joke);
+                                            addToAdapter(s);
                                         }
 
                                         @Override
-                                        public void failure(Request request,
-                                                            Response response,
-                                                            FuelError fuelError) {
+                                        public void failure(FuelError fuelError) {
                                             Log.e("ERROR", fuelError.toString());
                                         }
-
                                     });
                         } else if (response.getIntents().get(0).getIntent()
                                 .endsWith("PopularMovies")) {
                             final String response_christopher = response.getText().get(0);
-                            Fuel.get(Constants.POPULAR_MOVIES)
+                            Fuel.INSTANCE.get(Constants.POPULAR_MOVIES,null)
                                     .responseString(new Handler<String>() {
                                         @Override
-                                        public void success(Request request, Response response, String s) {
+                                        public void success(String s) {
                                             removeLoading();
                                             Movies movies = new Gson().fromJson(s, Movies.class);
                                             addToAdapter(response_christopher, movies, "PopularMovies");
                                         }
 
                                         @Override
-                                        public void failure(Request request, Response response, FuelError fuelError) {
+                                        public void failure(FuelError fuelError) {
 
                                         }
                                     });
                         } else if (response.getIntents().get(0).getIntent()
                                 .endsWith("TopMovies")) {
                             final String response_christopher = response.getText().get(0);
-                            Fuel.get(Constants.TOP_RATED_MOVIES)
+                            Fuel.INSTANCE.get(Constants.TOP_RATED_MOVIES,null)
                                     .responseString(new Handler<String>() {
                                         @Override
-                                        public void success(Request request, Response response, String s) {
+                                        public void success(String s) {
                                             removeLoading();
                                             Movies movies = new Gson().fromJson(s, Movies.class);
                                             addToAdapter(response_christopher, movies, "TopMovies");
                                         }
 
                                         @Override
-                                        public void failure(Request request, Response response, FuelError fuelError) {
+                                        public void failure(FuelError fuelError) {
 
                                         }
                                     });
