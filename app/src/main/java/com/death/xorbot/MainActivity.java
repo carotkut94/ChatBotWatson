@@ -213,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
                             String quotesURL =
                                     "https://api.forismatic.com/api/1.0/" +
                                             "?method=getQuote&format=text&lang=en";
-                            Fuel.INSTANCE.get(quotesURL,null).responseString(new Handler<String>() {
+                            Fuel.INSTANCE.get(quotesURL, null).responseString(new Handler<String>() {
                                 @Override
                                 public void success(String s) {
                                     removeLoading();
@@ -229,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
                                 .endsWith("Joke")) {
                             HashMap<String, String> headerValue = new HashMap<>();
                             headerValue.put("Accept", "text/plain");
-                            Fuel.INSTANCE.get("https://icanhazdadjoke.com/",null).header(headerValue)
+                            Fuel.INSTANCE.get("https://icanhazdadjoke.com/", null).header(headerValue)
                                     .responseString(new Handler<String>() {
                                         @Override
                                         public void success(String s) {
@@ -245,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
                         } else if (response.getIntents().get(0).getIntent()
                                 .endsWith("PopularMovies")) {
                             final String response_christopher = response.getText().get(0);
-                            Fuel.INSTANCE.get(Constants.POPULAR_MOVIES,null)
+                            Fuel.INSTANCE.get(Constants.POPULAR_MOVIES, null)
                                     .responseString(new Handler<String>() {
                                         @Override
                                         public void success(String s) {
@@ -262,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
                         } else if (response.getIntents().get(0).getIntent()
                                 .endsWith("TopMovies")) {
                             final String response_christopher = response.getText().get(0);
-                            Fuel.INSTANCE.get(Constants.TOP_RATED_MOVIES,null)
+                            Fuel.INSTANCE.get(Constants.TOP_RATED_MOVIES, null)
                                     .responseString(new Handler<String>() {
                                         @Override
                                         public void success(String s) {
@@ -308,6 +308,7 @@ public class MainActivity extends AppCompatActivity {
     class ParseWeb extends AsyncTask<String, List<StackOverflow>, List<StackOverflow>> {
 
         String christopher_response;
+
         @Override
         protected List<StackOverflow> doInBackground(String... strings) {
             Document doc = null;
@@ -318,25 +319,25 @@ public class MainActivity extends AppCompatActivity {
                 doc = Jsoup.connect(strings[0]).userAgent("AI for problems").get();
                 Log.e("DATA", doc.title());
                 Log.e("DATA HTML", doc.toString());
-                Element element = doc.select("div.search-results.js-search-results").first();
+                Element element = doc.select("div#questions").first();
                 if (element != null) {
-                    Elements elements = element.select("div.summary");
+                    Elements elements = element.select("div.question-summary");
                     Elements stats = element.select("div.statscontainer");
                     Log.e("Length", "" + elements.size());
                     if (elements.size() > 0) {
                         for (int i = 0; i < elements.size(); i++) {
                             stackOverflow = new StackOverflow();
-                            stackOverflow.setQuestion(elements.get(i).getElementsByClass("result-link").text());
+                            stackOverflow.setQuestion(elements.get(i).getElementsByTag("h3").text());
                             stackOverflow.setExcerpt(elements.get(i).getElementsByClass("excerpt").text());
                             stackOverflow.setAsked_by(elements.get(i).getElementsByClass("started fr").text());
                             stackOverflow.setVotes(stats.get(i).getElementsByClass("vote-count-post ").text());
-                            stackOverflow.setAnswers_count(stats.get(i).getElementsByClass("status answered-accepted").text());
+                            stackOverflow.setAnswers_count(stats.get(i).getElementsByClass("status").get(0).getElementsByTag("strong").text());
                             stackOverflow.setLink(elements.get(i).getElementsByTag("a").attr("href"));
                             overflows.add(stackOverflow);
                         }
                     }
                 }
-
+                updateUI(overflows, christopher_response);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -346,21 +347,26 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<StackOverflow> s) {
             super.onPostExecute(s);
-            if(s!=null) {
-                ResponseModel responseModel = new ResponseModel();
-                responseModel.setMine(false);
-                responseModel.setResponse(christopher_response);
-                responseModel.setCollection(true);
-                responseModel.setStackOverflow(true);
-                responseModel.setMovie(false);
-                responseModel.setStackOverflow(s);
+        }
+    }
+
+    private void updateUI(List<StackOverflow> s, String christopher_response) {
+        final ResponseModel responseModel = new ResponseModel();
+        responseModel.setMine(false);
+        responseModel.setResponse(christopher_response);
+        responseModel.setCollection(true);
+        responseModel.setStackOverflow(true);
+        responseModel.setMovie(false);
+        responseModel.setStackOverflow(s);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                removeLoading();
                 responseModelList.add(responseModel);
                 botAdapter.notifyDataSetChanged();
                 if (!isLastVisible())
                     conversation.smoothScrollToPosition(botAdapter.getItemCount() - 1);
-
-                removeLoading();
             }
-        }
+        });
     }
 }
